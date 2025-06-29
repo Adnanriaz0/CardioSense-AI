@@ -2,6 +2,7 @@
   "name": "pcg",
   "version": "0.1.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
@@ -49,5 +50,16 @@
   },
   "devDependencies": {
     "tailwindcss": "^3.4.17"
+  },
+  "description": "Getting Started with Create React App - A React application for Phonocradiogram (PCG) health monitoring.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adnanriaz0/CardioSense-AI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Adnanriaz0/CardioSense-AI/issues"
   }
 }
