@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Registermain from "./Register/components/Registermain";
 import Loginmain from "./Login/Loginmain";
 import Forgetpw from "./Forgetpassword/Forgetpw";
-import Doctor from "./Doctor/Doctor";
+import Doctormain from "./Doctor/components/Doctormain";
 import Patient from "./Patient/Patient";
 import Homepp from "./Home/Homepp"; 
 function App() {
@@ -15,7 +15,7 @@ function App() {
     <Route path="/login" element={<Loginmain />} />
      <Route path="/home" element={<Homepp/>} />
      <Route path="/forget" element={<Forgetpw />} />
-     <Route path="/doctor" element={<Doctor />} />
+     <Route path="/doctor" element={<Doctormain />} />
      <Route path="/patient" element={<Patient />} />
   </Routes>
 </BrowserRouter>

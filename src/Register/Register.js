@@ -1,180 +1,152 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+import RegistrationHeader from "./components/RegistrationHeader";
+import UserTypeToggle from "./components/UserTypeToggle";
+import PersonalInfoForm from "./components/PersonalInfoForm";
+import PatientInfoForm from "./components/PatientInfoForm";
+import DoctorInfoForm from "./components/DoctorInfoForm";
+import AccountInfoForm from "./components/AccountInfoForm";
+import AuthLinks from "./components/AuthLinks";
 
 const Register = () => {
+  const navigate = useNavigate();
   const [userType, setUserType] = useState("patient");
-  const [gender, setGender] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const navigate = useNavigate(); // 👈 React Router hook for navigation
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    password: "",
+    confirmPassword: "",
+    gender: "male",
+    age: "",
+    specialization: "",
+  });
 
-  const handleSubmit = (e) => {
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); // 'success' | 'error'
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+    setMessageType("");
 
-    // Yahan aap backend API call laga sakte ho
-    // Success hone ke baad redirect:
-    console.log("User registered successfully!");
-    navigate("/login"); // 👈 Redirect to login page
+    if (formData.password !== formData.confirmPassword) {
+      setMessage("Passwords do not match.");
+      setMessageType("error");
+      return;
+    }
+
+    if (userType === "patient" && !formData.age) {
+      setMessage("Please enter age for patient.");
+      setMessageType("error");
+      return;
+    }
+
+    if (userType === "doctor" && !formData.specialization) {
+      setMessage("Please enter specialization for doctor.");
+      setMessageType("error");
+      return;
+    }
+
+    try {
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        gender: formData.gender,
+        userType: userType, // 👈 ensure userType is included
+        age: userType === "patient" ? formData.age : undefined,
+        specialization: userType === "doctor" ? formData.specialization : undefined,
+      };
+
+      console.log("📦 Sending registration payload:", payload);
+
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("✅ Registration response:", response.data);
+
+      setMessage(response.data.message || "Registration successful!");
+      setMessageType("success");
+
+      setFormData({
+        fullName: "",
+        email: "",
+        phoneNumber: "",
+        password: "",
+        confirmPassword: "",
+        gender: "male",
+        age: "",
+        specialization: "",
+      });
+
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (error) {
+      console.error("❌ Registration error:", error);
+      setMessage(
+        error.response?.data?.message ||
+          "Something went wrong. Please try again."
+      );
+      setMessageType("error");
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300 p-6">
-      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center text-blue-800 mb-6">
-          Register as {userType === "doctor" ? "Doctor" : "Patient"}
-        </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-300 p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-lg relative">
+        <RegistrationHeader />
+        <UserTypeToggle userType={userType} setUserType={setUserType} />
 
-        {/* Toggle Buttons */}
-        <div className="flex justify-center space-x-4 mb-6">
-          <button
-            onClick={() => setUserType("patient")}
-            className={`px-6 py-2 rounded-full font-semibold transition ${
-              userType === "patient"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+        {message && (
+          <p
+            className={`text-center mb-4 font-medium ${
+              messageType === "error" ? "text-red-500" : "text-green-600"
             }`}
           >
-            Patient
-          </button>
-          <button
-            onClick={() => setUserType("doctor")}
-            className={`px-6 py-2 rounded-full font-semibold transition ${
-              userType === "doctor"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            Doctor
-          </button>
-        </div>
+            {message}
+          </p>
+        )}
 
-        {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-
-          {/* Conditional rendering for Doctor-specific field */}
-          {userType === "doctor" ? (
-            <input
-              type="text"
-              placeholder="Specialization" // Changed from Age to Specialization
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <PersonalInfoForm formData={formData} handleChange={handleChange} />
+          {userType === "patient" ? (
+            <PatientInfoForm formData={formData} handleChange={handleChange} />
           ) : (
-            <input
-              type="number"
-              placeholder="Age"
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+            <DoctorInfoForm formData={formData} handleChange={handleChange} />
           )}
-
-          {/* Gender Input Styled Like Other Inputs with Radio Buttons Inline */}
-          <div className="w-full px-4 py-2 border rounded-lg focus-within:ring-2 focus-within:ring-blue-400">
-            <div className="flex items-center justify-between">
-              <label className="text-gray-700 font-medium">Gender</label>
-              <div className="flex space-x-4">
-                <label className="flex items-center space-x-1 text-gray-700">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="male"
-                    checked={gender === "male"}
-                    onChange={(e) => setGender(e.target.value)}
-                    required
-                  />
-                  <span>Male</span>
-                </label>
-                <label className="flex items-center space-x-1 text-gray-700">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="female"
-                    checked={gender === "female"}
-                    onChange={(e) => setGender(e.target.value)}
-                  />
-                  <span>Female</span>
-                </label>
-                <label className="flex items-center space-x-1 text-gray-700">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="other"
-                    checked={gender === "other"}
-                    onChange={(e) => setGender(e.target.value)}
-                  />
-                  <span>Other</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <input
-            type="tel"
-            placeholder="Phone Number"
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          <AccountInfoForm
+            formData={formData}
+            handleChange={handleChange}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
           />
-          <input
-            type="email"
-            placeholder="Email Address"
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-
-          {/* Password */}
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <span
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute top-1/2 right-3 transform -translate-y-1/2 cursor-pointer text-gray-600"
-            >
-              {showPassword ? "🙈" : "👁️"}
-            </span>
-          </div>
-
-          {/* Confirm Password */}
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <span
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute top-1/2 right-3 transform -translate-y-1/2 cursor-pointer text-gray-600"
-            >
-              {showConfirmPassword ? "🙈" : "👁️"}
-            </span>
-          </div>
-
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+            className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200"
           >
             Register
           </button>
         </form>
 
-        {/* Already have aaccount? */}
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login here
-          </Link>
-        </p>
+        <AuthLinks isRegister={true} />
       </div>
     </div>
   );

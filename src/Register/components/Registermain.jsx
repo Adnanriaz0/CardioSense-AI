@@ -1,50 +1,117 @@
-// src/components/Register.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
 import RegisterHeader from "./RegisterHeader";
-import UserTypeToggle from "./UserTypeToggle"; // Reusable from Login components
+import UserTypeToggle from "./UserTypeToggle";
 import RegistrationForm from "./RegistrationForm";
-import AuthNavigationLink from "./AuthNavigationLink"; // For "Already have an account?" link
+import AuthNavigationLink from "./AuthNavigationLink";
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [userType, setUserType] = useState("patient");
-  const [gender, setGender] = useState("");
+  const [gender, setGender] = useState("male");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // New states for form inputs
   const [fullName, setFullName] = useState("");
-  const [specificField, setSpecificField] = useState(""); // For specialization/age
+  const [specificField, setSpecificField] = useState(""); // age/specialization
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); // success or error
 
-  const handleSubmit = (e) => {
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Yahan aap backend API call laga sakte ho
-    // Example:
-    console.log("Registering user:", {
-      userType,
-      fullName,
-      specificField,
-      gender,
-      phoneNumber,
-      email,
-      password,
-      confirmPassword,
-    });
+    setMessage("");
+    setMessageType("");
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+    // Validate required fields
+    if (!fullName || !email || !phoneNumber || !password || !confirmPassword || !gender || !userType) {
+      setMessage("\u26A0\uFE0F Please fill all required fields.");
+      setMessageType("error");
       return;
     }
 
-    // Success hone ke baad redirect:
-    console.log("User registered successfully!");
-    navigate("/login");
+    if (!validateEmail(email)) {
+      setMessage("\u26A0\uFE0F Please enter a valid email address.");
+      setMessageType("error");
+      return;
+    }
+
+    if (password.length < 6) {
+      setMessage("\u26A0\uFE0F Password must be at least 6 characters long.");
+      setMessageType("error");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("\u26A0\uFE0F Passwords do not match.");
+      setMessageType("error");
+      return;
+    }
+
+    if (userType === "patient" && (!specificField || isNaN(specificField))) {
+      setMessage("\u26A0\uFE0F Valid age is required for patient.");
+      setMessageType("error");
+      return;
+    }
+
+    if (userType === "doctor" && !specificField) {
+      setMessage("\u26A0\uFE0F Specialization is required for doctor.");
+      setMessageType("error");
+      return;
+    }
+
+    const payload = {
+      fullName,
+      email,
+      phoneNumber,
+      password,
+      confirmPassword,
+      gender,
+      userType,
+      ...(userType === "patient" && { age: Number(specificField) }),
+      ...(userType === "doctor" && { specialization: specificField }),
+    };
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/register", payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      setMessage("\u2705 " + (res.data.message || "Registration successful! Please check your email."));
+      setMessageType("success");
+
+      setFullName("");
+      setEmail("");
+      setPhoneNumber("");
+      setPassword("");
+      setConfirmPassword("");
+      setSpecificField("");
+      setGender("male");
+
+      setTimeout(() => navigate("/login"), 2500);
+    } catch (error) {
+      console.error("\u274C Registration error:", error);
+      if (error.response?.status === 400 && error.response?.data?.message) {
+        setMessage("\u26A0\uFE0F " + error.response.data.message);
+      } else {
+        setMessage("\u274C Something went wrong. Please try again.");
+      }
+      setMessageType("error");
+    }
   };
 
   return (
@@ -52,6 +119,17 @@ const Register = () => {
       <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md">
         <RegisterHeader userType={userType} />
         <UserTypeToggle userType={userType} setUserType={setUserType} />
+
+        {message && (
+          <p
+            className={`text-center font-medium mb-4 ${
+              messageType === "error" ? "text-red-500" : "text-green-600"
+            }`}
+          >
+            {message}
+          </p>
+        )}
+
         <RegistrationForm
           userType={userType}
           gender={gender}
@@ -61,7 +139,6 @@ const Register = () => {
           showConfirmPassword={showConfirmPassword}
           setShowConfirmPassword={setShowConfirmPassword}
           onSubmit={handleSubmit}
-          // Pass input states and setters
           fullName={fullName}
           setFullName={setFullName}
           specificField={specificField}
@@ -75,6 +152,7 @@ const Register = () => {
           confirmPassword={confirmPassword}
           setConfirmPassword={setConfirmPassword}
         />
+
         <AuthNavigationLink
           text="Already have an account?"
           linkText="Login here"
