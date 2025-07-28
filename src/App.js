@@ -4,7 +4,7 @@ import Registermain from "./Register/components/Registermain";
 import Loginmain from "./Login/Loginmain";
 import Forgetpw from "./Forgetpassword/Forgetpw";
 import Doctormain from "./Doctor/components/Doctormain";
-import Patient from "./Patient/Patient";
+import PatientDashboard from "./Patient//components/PatientDashboard";
 import Homepp from "./Home/Homepp"; 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
      <Route path="/home" element={<Homepp/>} />
      <Route path="/forget" element={<Forgetpw />} />
      <Route path="/doctor" element={<Doctormain />} />
-     <Route path="/patient" element={<Patient />} />
+     <Route path="/patient" element={<PatientDashboard />} />
   </Routes>
 </BrowserRouter>
 </div>
